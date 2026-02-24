@@ -1,0 +1,30 @@
+{% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
+
+{% block page_checkout_confirm_shipping %}
+    {{ parent() }}
+
+    <div class="click-collect-timeslot" data-click-collect>
+        <h3>{{ 'swag-example.general.sw-click-collect-timeslot.timeslot'|trans }}</h3>
+
+        <div class="timeslots">
+            <label>
+                <input type="radio" name="sw_timeslot" value="timeslot1">
+                {{ 'swag-example.general.sw-click-collect-timeslot.timeslot1'|trans }}
+            </label>
+            <label>
+                <input type="radio" name="sw_timeslot" value="timeslot2">
+                {{ 'swag-example.general.sw-click-collect-timeslot.timeslot2'|trans }}
+            </label>
+            <label>
+                <input type="radio" name="sw_timeslot" value="timeslot3">
+                {{ 'swag-example.general.sw-click-collect-timeslot.timeslot3'|trans }}
+            </label>
+        </div>
+
+        <button type="button" class="btn btn-primary" data-click-collect-confirm>
+            {{ 'swag-example.general.sw-click-collect-timeslot.selectTimeslot'|trans }}
+        </button>
+
+        <div class="click-collect-notice" data-click-collect-notice></div>
+    </div>
+{% endblock %}

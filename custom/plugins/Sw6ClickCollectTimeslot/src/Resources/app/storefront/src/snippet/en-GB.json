@@ -1,0 +1,15 @@
+{
+  "swag-example": {
+    "general": {
+      "sw-click-collect-timeslot": {
+        "varianteB": "Click and Collect in Store",
+        "timeslot": "Time slot",
+        "timeslot1": "09:00 - 11:00 Hour",
+        "timeslot2": "11:00 - 13:00 Hour",
+        "timeslot3": "13:00 - 15:00 Hour",
+        "selectTimeslot": "Select a time slot",
+        "noTimeslots": "No time slots available"
+      }
+    }
+  }
+}

@@ -11,7 +11,7 @@ use Shopware\Core\System\CustomField\CustomFieldTypes;
 
 class CustomFieldsInstaller
 {
-    private const CUSTOM_FIELDSET_NAME = 'swag_example_set';
+    private const CUSTOM_FIELDSET_NAME = 'sw6_clickcollect_timeslot_set';
 
     private const CUSTOM_FIELDSET = [
         'name' => self::CUSTOM_FIELDSET_NAME,
@@ -24,7 +24,7 @@ class CustomFieldsInstaller
         ],
         'customFields' => [
             [
-                'name' => 'swag_example_size',
+                'name' => 'sw6_clickcollect_timeslot_size',
                 'type' => CustomFieldTypes::INT,
                 'config' => [
                     'label' => [
