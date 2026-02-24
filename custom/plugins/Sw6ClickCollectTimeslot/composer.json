@@ -1,0 +1,27 @@
+{
+    "name": "sw6-click-collect-timeslot/sw6-click-collect-timeslot",
+    "description": "sw6-click-collect-timeslot/sw6-click-collect-timeslot",
+    "type": "shopware-platform-plugin",
+    "version": "1.0.0",
+    "license": "MIT",
+    "require": {
+        "shopware/core": "~6.7.0"
+    },
+    "extra": {
+        "shopware-plugin-class": "Sw6ClickCollectTimeslot\\Sw6ClickCollectTimeslot",
+        "label": {
+            "de-DE": "Skeleton plugin",
+            "en-GB": "Skeleton plugin"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Sw6ClickCollectTimeslot\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sw6ClickCollectTimeslot\\Tests\\": "tests/"
+        }
+    }
+}
