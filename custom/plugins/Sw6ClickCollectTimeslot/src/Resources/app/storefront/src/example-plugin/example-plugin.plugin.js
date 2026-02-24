@@ -4,12 +4,16 @@ export default class ExamplePlugin extends Plugin {
     init() {
         this.container = this.el || document.querySelector('[data-click-collect]');
         this.notice = this.container?.querySelector('[data-click-collect-notice]');
+        this.isClickCollectSelected = false;
 
         // Watch for shipping method selection changes
         this.observeShippingSelection();
         
         // Handle timeslot submission
         this.handleTimeslotSaving();
+
+        // Handle checkout validation
+        this.handleCheckoutValidation();
     }
 
     observeShippingSelection() {
@@ -81,13 +85,26 @@ export default class ExamplePlugin extends Plugin {
         const normalized = (labelText || '').trim().toLowerCase();
         const match = /abholung im store|abholung|click.*collect|click and collect/i.test(normalized);
 
+        // Get all standard shipping methods (excluding click & collect)
+        const standardShippingMethods = document.querySelectorAll('.shipping-method');
+
         if (match && timeslotContainer) {
             timeslotContainer.style.display = '';
             // Reset the timeslot selection when switching to this method
             const radioInputs = timeslotContainer.querySelectorAll('input[name="sw_timeslot"]');
             radioInputs.forEach(radio => radio.checked = false);
+            // Hide standard shipping methods when Click & Collect is selected
+            standardShippingMethods.forEach(method => {
+                method.style.display = 'none';
+            });
+            this.isClickCollectSelected = true;
         } else if (timeslotContainer) {
             timeslotContainer.style.display = 'none';
+            // Show standard shipping methods when Click & Collect is not selected
+            standardShippingMethods.forEach(method => {
+                method.style.display = '';
+            });
+            this.isClickCollectSelected = false;
         }
     }
 
@@ -113,6 +130,77 @@ export default class ExamplePlugin extends Plugin {
                 window.localStorage.setItem('sw_click_collect_timeslot', e.target.value);
             }
         });
+    }
+
+    handleCheckoutValidation() {
+        // Find the checkout form (confirm order form)
+        const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
+                            document.querySelector('#confirmOrderForm') ||
+                            document.querySelector('form[action*="checkout/confirm"]');
+        
+        if (checkoutForm) {
+            checkoutForm.addEventListener('submit', (e) => {
+                // Check if Click & Collect is selected
+                if (this.isClickCollectSelected) {
+                    const selectedTimeslot = this.container?.querySelector('input[name="sw_timeslot"]:checked');
+                    if (!selectedTimeslot) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.showError('Kein Zeitfenster ausgewählt');
+                        return false;
+                    }
+                }
+            });
+        }
+
+        // Also watch for the confirm button click
+        const confirmButton = document.querySelector('.btn.checkout-confirm-submit') ||
+                             document.querySelector('button[type="submit"][form="confirmOrderForm"]') ||
+                             document.querySelector('.checkout-confirm-form-submit');
+        
+        if (confirmButton) {
+            confirmButton.addEventListener('click', (e) => {
+                // Check if Click & Collect is selected
+                if (this.isClickCollectSelected) {
+                    const selectedTimeslot = this.container?.querySelector('input[name="sw_timeslot"]:checked');
+                    if (!selectedTimeslot) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.showError('Kein Zeitfenster ausgewählt');
+                        return false;
+                    }
+                }
+            });
+        }
+    }
+
+    showError(message) {
+        // Remove existing error message
+        const existingError = document.querySelector('.click-collect-error');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Create error element
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger click-collect-error';
+        errorDiv.style.marginTop = '10px';
+        errorDiv.innerHTML = `<div class="alert-content">${message}</div>`;
+
+        // Insert after the timeslot container
+        if (this.container) {
+            this.container.appendChild(errorDiv);
+            
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
     }
 
     destroy() {

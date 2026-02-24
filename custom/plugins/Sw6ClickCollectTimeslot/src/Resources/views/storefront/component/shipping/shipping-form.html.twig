@@ -47,6 +47,8 @@
             const clickCollectToggle = document.querySelector('[data-toggle-timeslots]');
             const timeslotContainer = document.querySelector('[data-click-collect]');
             const allRadioButtons = document.querySelectorAll('input[name="shippingMethod"]');
+            const standardShippingMethods = document.querySelectorAll('.shipping-method');
+            let isClickCollectSelected = false;
 
             function hideTimeslots() {
                 if (timeslotContainer) {
@@ -60,12 +62,57 @@
                 }
             }
 
+            function hideStandardShippingMethods() {
+                standardShippingMethods.forEach(function(method) {
+                    method.style.display = 'none';
+                });
+            }
+
+            function showStandardShippingMethods() {
+                standardShippingMethods.forEach(function(method) {
+                    method.style.display = '';
+                });
+            }
+
+            function showError(message) {
+                // Remove existing error message
+                const existingError = document.querySelector('.click-collect-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+
+                // Create error element
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger click-collect-error';
+                errorDiv.style.marginTop = '10px';
+                errorDiv.innerHTML = '<div class="alert-content">' + message + '</div>';
+
+                // Insert after the timeslot container
+                if (timeslotContainer) {
+                    timeslotContainer.appendChild(errorDiv);
+                    
+                    // Scroll to error
+                    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                // Auto-remove after 5 seconds
+                setTimeout(function() {
+                    if (errorDiv.parentNode) {
+                        errorDiv.remove();
+                    }
+                }, 5000);
+            }
+
             if (clickCollectToggle) {
                 clickCollectToggle.addEventListener('change', function() {
                     if (this.checked) {
                         showTimeslots();
+                        hideStandardShippingMethods();
+                        isClickCollectSelected = true;
                     } else {
                         hideTimeslots();
+                        showStandardShippingMethods();
+                        isClickCollectSelected = false;
                     }
                 });
             }
@@ -75,9 +122,42 @@
                 radio.addEventListener('change', function() {
                     if (this !== clickCollectToggle && this.checked) {
                         hideTimeslots();
+                        showStandardShippingMethods();
+                        isClickCollectSelected = false;
                     }
                 });
             });
+
+            // Checkout validation
+            function validateCheckout(e) {
+                if (isClickCollectSelected) {
+                    const selectedTimeslot = timeslotContainer ? timeslotContainer.querySelector('input[name="sw_timeslot"]:checked') : null;
+                    if (!selectedTimeslot) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showError('Kein Zeitfenster ausgewählt');
+                        return false;
+                    }
+                }
+            }
+
+            // Find and bind to checkout form
+            const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
+                                document.querySelector('#confirmOrderForm') ||
+                                document.querySelector('form[action*="checkout/confirm"]');
+            
+            if (checkoutForm) {
+                checkoutForm.addEventListener('submit', validateCheckout);
+            }
+
+            // Also bind to confirm button
+            const confirmButton = document.querySelector('.btn.checkout-confirm-submit') ||
+                                 document.querySelector('button[type="submit"][form="confirmOrderForm"]') ||
+                                 document.querySelector('.checkout-confirm-form-submit');
+            
+            if (confirmButton) {
+                confirmButton.addEventListener('click', validateCheckout);
+            }
         });
     </script>
 {% endblock %}
