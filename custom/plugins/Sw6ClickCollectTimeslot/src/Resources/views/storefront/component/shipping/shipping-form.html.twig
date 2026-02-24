@@ -1,0 +1,86 @@
+{% sw_extends '@Storefront/storefront/component/shipping/shipping-form.html.twig' %}
+
+{% block component_shipping_form_list %}
+    <div class="shipping-methods">
+        {% for shipping in page.shippingMethods %}
+            {% block component_shipping_form_method %}
+                {% sw_include '@Storefront/storefront/component/shipping/shipping-method.html.twig' %}
+            {% endblock %}
+        {% endfor %}
+
+        {# Click & Collect - Store Pickup Option #}
+        {% block component_shipping_form_click_collect %}
+            <div class="shipping-method-click-collect">
+                <label class="form-check">
+                    <input type="radio" name="shippingMethod" value="click-collect" class="form-check-input click-collect-toggle" data-toggle-timeslots>
+                    <span class="form-check-label">Abholung im Store</span>
+                </label>
+
+                {# Timeslots - only visible when Click & Collect is selected #}
+                <div class="shipping-method-timeslots click-collect-timeslot" data-click-collect style="margin: 15px 0 15px 30px; display: none;">
+                    <div class="timeslots">
+                        <h5 class="mb-2">Zeitfenster wählen</h5>
+                        
+                        <div class="timeslot-options">
+                            <label class="form-check">
+                                <input type="radio" name="sw_timeslot" value="timeslot1" class="form-check-input">
+                                <span class="form-check-label">09:00 - 11:00 Uhr</span>
+                            </label>
+                            <label class="form-check">
+                                <input type="radio" name="sw_timeslot" value="timeslot2" class="form-check-input">
+                                <span class="form-check-label">11:00 - 13:00 Uhr</span>
+                            </label>
+                            <label class="form-check">
+                                <input type="radio" name="sw_timeslot" value="timeslot3" class="form-check-input">
+                                <span class="form-check-label">13:00 - 15:00 Uhr</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="click-collect-notice" data-click-collect-notice></div>
+                </div>
+            </div>
+        {% endblock %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const clickCollectToggle = document.querySelector('[data-toggle-timeslots]');
+            const timeslotContainer = document.querySelector('[data-click-collect]');
+            const allRadioButtons = document.querySelectorAll('input[name="shippingMethod"]');
+
+            function hideTimeslots() {
+                if (timeslotContainer) {
+                    timeslotContainer.style.display = 'none';
+                }
+            }
+
+            function showTimeslots() {
+                if (timeslotContainer) {
+                    timeslotContainer.style.display = 'block';
+                }
+            }
+
+            if (clickCollectToggle) {
+                clickCollectToggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        showTimeslots();
+                    } else {
+                        hideTimeslots();
+                    }
+                });
+            }
+
+            // Hide timeslots when any other shipping method is selected
+            allRadioButtons.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this !== clickCollectToggle && this.checked) {
+                        hideTimeslots();
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
+
+
+
