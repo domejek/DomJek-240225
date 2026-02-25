@@ -1,54 +1,42 @@
 {% sw_extends '@Storefront/storefront/component/shipping/shipping-form.html.twig' %}
 
-{% block component_shipping_form_list %}
-    <div class="shipping-methods">
-        {% for shipping in page.shippingMethods %}
-            {% block component_shipping_form_method %}
-                {% sw_include '@Storefront/storefront/component/shipping/shipping-method.html.twig' %}
-            {% endblock %}
-        {% endfor %}
+{% block component_shipping_form %}
+    <div class="shipping-method-form" data-form-auto-submit="true">
+        <div class="shipping-method-select">
+            <label for="shippingMethodSelect" class="form-label">Versandart</label>
+            <select id="shippingMethodSelect" name="shippingMethodSelect" class="form-select shipping-method-dropdown">
+                <option value="standard">Standard</option>
+                <option value="click-collect">Abholung im Store</option>
+            </select>
+        </div>
 
-        {# Click & Collect - Store Pickup Option #}
-        {% block component_shipping_form_click_collect %}
-            <div class="shipping-method-click-collect">
-                <label class="form-check">
-                    <input type="radio" name="shippingMethod" value="click-collect" class="form-check-input click-collect-toggle" data-toggle-timeslots>
-                    <span class="form-check-label">Abholung im Store</span>
-                </label>
-
-                {# Timeslots - only visible when Click & Collect is selected #}
-                <div class="shipping-method-timeslots click-collect-timeslot" data-click-collect style="margin: 15px 0 15px 30px; display: none;">
-                    <div class="timeslots">
-                        <h5 class="mb-2">Zeitfenster wählen</h5>
-                        
-                        <div class="timeslot-options">
-                            <label class="form-check">
-                                <input type="radio" name="sw_timeslot" value="timeslot1" class="form-check-input">
-                                <span class="form-check-label">09:00 - 11:00 Uhr</span>
-                            </label>
-                            <label class="form-check">
-                                <input type="radio" name="sw_timeslot" value="timeslot2" class="form-check-input">
-                                <span class="form-check-label">11:00 - 13:00 Uhr</span>
-                            </label>
-                            <label class="form-check">
-                                <input type="radio" name="sw_timeslot" value="timeslot3" class="form-check-input">
-                                <span class="form-check-label">13:00 - 15:00 Uhr</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="click-collect-notice" data-click-collect-notice></div>
+        {# Timeslots - only visible when Click & Collect is selected #}
+        <div class="shipping-method-timeslots click-collect-timeslot" data-click-collect style="margin-top: 20px; display: none;">
+            <h5 class="mb-3">Zeitfenster wählen</h5>
+            
+            <div class="timeslot-options">
+                <div class="form-check">
+                    <input type="checkbox" name="sw_timeslot[]" value="timeslot1" class="form-check-input timeslot-checkbox" id="timeslot1">
+                    <label class="form-check-label" for="timeslot1">09:00 - 11:00 Uhr</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="sw_timeslot[]" value="timeslot2" class="form-check-input timeslot-checkbox" id="timeslot2">
+                    <label class="form-check-label" for="timeslot2">11:00 - 13:00 Uhr</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="sw_timeslot[]" value="timeslot3" class="form-check-input timeslot-checkbox" id="timeslot3">
+                    <label class="form-check-label" for="timeslot3">13:00 - 15:00 Uhr</label>
                 </div>
             </div>
-        {% endblock %}
+            <div class="click-collect-notice" data-click-collect-notice></div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const clickCollectToggle = document.querySelector('[data-toggle-timeslots]');
+            const shippingSelect = document.getElementById('shippingMethodSelect');
             const timeslotContainer = document.querySelector('[data-click-collect]');
-            const allRadioButtons = document.querySelectorAll('input[name="shippingMethod"]');
-            const standardShippingMethods = document.querySelectorAll('.shipping-method');
-            let isClickCollectSelected = false;
+            const timeslotCheckboxes = document.querySelectorAll('.timeslot-checkbox');
 
             function hideTimeslots() {
                 if (timeslotContainer) {
@@ -62,40 +50,22 @@
                 }
             }
 
-            function hideStandardShippingMethods() {
-                standardShippingMethods.forEach(function(method) {
-                    method.style.display = 'none';
-                });
-            }
-
-            function showStandardShippingMethods() {
-                standardShippingMethods.forEach(function(method) {
-                    method.style.display = '';
-                });
-            }
-
             function showError(message) {
-                // Remove existing error message
                 const existingError = document.querySelector('.click-collect-error');
                 if (existingError) {
                     existingError.remove();
                 }
 
-                // Create error element
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'alert alert-danger click-collect-error';
                 errorDiv.style.marginTop = '10px';
                 errorDiv.innerHTML = '<div class="alert-content">' + message + '</div>';
 
-                // Insert after the timeslot container
                 if (timeslotContainer) {
                     timeslotContainer.appendChild(errorDiv);
-                    
-                    // Scroll to error
                     errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
 
-                // Auto-remove after 5 seconds
                 setTimeout(function() {
                     if (errorDiv.parentNode) {
                         errorDiv.remove();
@@ -103,39 +73,25 @@
                 }, 5000);
             }
 
-            if (clickCollectToggle) {
-                clickCollectToggle.addEventListener('change', function() {
-                    if (this.checked) {
+            if (shippingSelect) {
+                shippingSelect.addEventListener('change', function() {
+                    if (this.value === 'click-collect') {
                         showTimeslots();
-                        hideStandardShippingMethods();
-                        isClickCollectSelected = true;
                     } else {
                         hideTimeslots();
-                        showStandardShippingMethods();
-                        isClickCollectSelected = false;
+                        timeslotCheckboxes.forEach(cb => cb.checked = false);
                     }
                 });
             }
 
-            // Hide timeslots when any other shipping method is selected
-            allRadioButtons.forEach(function(radio) {
-                radio.addEventListener('change', function() {
-                    if (this !== clickCollectToggle && this.checked) {
-                        hideTimeslots();
-                        showStandardShippingMethods();
-                        isClickCollectSelected = false;
-                    }
-                });
-            });
-
-            // Checkout validation
+            // Validate checkout when button is clicked
             function validateCheckout(e) {
-                if (isClickCollectSelected) {
-                    const selectedTimeslot = timeslotContainer ? timeslotContainer.querySelector('input[name="sw_timeslot"]:checked') : null;
-                    if (!selectedTimeslot) {
+                if (shippingSelect && shippingSelect.value === 'click-collect') {
+                    const selectedCheckboxes = timeslotContainer ? timeslotContainer.querySelectorAll('input[name="sw_timeslot[]"]:checked') : [];
+                    if (selectedCheckboxes.length === 0) {
                         e.preventDefault();
                         e.stopPropagation();
-                        showError('Kein Zeitfenster ausgewählt');
+                        showError('Bitte wählen Sie mindestens ein Zeitfenster aus');
                         return false;
                     }
                 }
@@ -147,7 +103,33 @@
                                 document.querySelector('form[action*="checkout/confirm"]');
             
             if (checkoutForm) {
-                checkoutForm.addEventListener('submit', validateCheckout);
+                checkoutForm.addEventListener('submit', function(e) {
+                    if (shippingSelect && shippingSelect.value === 'click-collect') {
+                        const selectedCheckboxes = timeslotContainer ? timeslotContainer.querySelectorAll('input[name="sw_timeslot[]"]:checked') : [];
+                        if (selectedCheckboxes.length > 0) {
+                            // Add hidden input with selected timeslots
+                            const existingHidden = checkoutForm.querySelector('input[type="hidden"][name="sw_timeslot"]');
+                            if (existingHidden) existingHidden.remove();
+
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = 'sw_timeslot';
+                            hiddenInput.value = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+                            checkoutForm.appendChild(hiddenInput);
+
+                            // Add hidden input for click collect flag
+                            const existingFlag = checkoutForm.querySelector('input[type="hidden"][name="sw_click_collect_is_pickup"]');
+                            if (existingFlag) existingFlag.remove();
+
+                            const flagInput = document.createElement('input');
+                            flagInput.type = 'hidden';
+                            flagInput.name = 'sw_click_collect_is_pickup';
+                            flagInput.value = '1';
+                            checkoutForm.appendChild(flagInput);
+                        }
+                    }
+                    validateCheckout(e);
+                });
             }
 
             // Also bind to confirm button
@@ -161,6 +143,3 @@
         });
     </script>
 {% endblock %}
-
-
-

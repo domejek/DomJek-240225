@@ -36,12 +36,10 @@ class MySubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Check if Click & Collect was selected
         $isClickCollect = $request->request->get('sw_click_collect_is_pickup', false);
         $timeslotValue = $request->request->get('sw_timeslot') ?? $request->cookies->get('sw_click_collect_timeslot');
 
         if (!$isClickCollect && !$timeslotValue) {
-            // Try to get from localStorage via cookie or request
             $timeslotValue = $request->cookies->get('sw_click_collect_timeslot');
         }
 
@@ -49,7 +47,12 @@ class MySubscriber implements EventSubscriberInterface
             return;
         }
 
-        $timeslotLabel = self::TIMESLOT_LABELS[$timeslotValue] ?? $timeslotValue;
+        $timeslotLabels = [];
+        $timeslotValues = explode(',', $timeslotValue);
+        foreach ($timeslotValues as $value) {
+            $timeslotLabels[] = self::TIMESLOT_LABELS[trim($value)] ?? trim($value);
+        }
+        $timeslotLabel = implode(', ', $timeslotLabels);
 
         $order = $event->getOrder();
         
