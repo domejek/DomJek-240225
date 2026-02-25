@@ -1,0 +1,20 @@
+{% sw_extends '@Storefront/storefront/page/account/order-history/order-detail.html.twig' %}
+
+{% block page_account_order_item_detail_shipping_method_value %}
+    {% if order.customFields.sw6_clickcollect_is_pickup %}
+        <dd class="col-6 col-md-7 order-item-detail-labels-value">
+            Abholung im Store
+            {% if order.customFields.sw6_clickcollect_timeslot %}
+                <br><small class="text-muted">{{ order.customFields.sw6_clickcollect_timeslot }}</small>
+            {% endif %}
+        </dd>
+    {% elseif feature('v6.8.0.0') %}
+        <dd class="col-6 col-md-7 order-item-detail-labels-value">
+            {{ order.primaryOrderDelivery.shippingMethod.translated.name }}
+        </dd>
+    {% else %}
+        <dd class="col-6 col-md-7 order-item-detail-labels-value">
+            {{ order.deliveries|first.shippingMethod.translated.name }}
+        </dd>
+    {% endif %}
+{% endblock %}
