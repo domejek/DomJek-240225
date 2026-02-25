@@ -1,0 +1,48 @@
+{% sw_extends '@Storefront/storefront/page/checkout/finish/index.html.twig' %}
+
+{% block page_checkout_finish_info %}
+    {{ parent() }}
+    
+    {% if page.order.customFields.sw6_clickcollect_is_pickup %}
+        <div class="click-collect-finish-info" style="margin-top: 20px;">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-store"></i> Abholung im Store
+                    </h5>
+                    <p class="card-text">
+                        <strong>Zeitfenster:</strong> {{ page.order.customFields.sw6_clickcollect_timeslot }}
+                    </p>
+                    <p class="card-text text-muted">
+                        Bitte holen Sie Ihre Bestellung innerhalb des gewählten Zeitfensters ab.
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block page_checkout_finish_order_shipping_method %}
+    {% if page.order.customFields.sw6_clickcollect_is_pickup %}
+        <div class="col-12 col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    {% block page_checkout_finish_order_shipping_method_title %}
+                        <h5 class="card-title">
+                            {{ 'checkout.shippingMethod'|trans|sw_sanitize }}
+                        </h5>
+                    {% endblock %}
+
+                    {% block page_checkout_finish_order_shipping_method_content %}
+                        <p class="card-text">
+                            <strong>Abholung im Store</strong><br>
+                            <small class="text-muted">Zeitfenster: {{ page.order.customFields.sw6_clickcollect_timeslot }}</small>
+                        </p>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}

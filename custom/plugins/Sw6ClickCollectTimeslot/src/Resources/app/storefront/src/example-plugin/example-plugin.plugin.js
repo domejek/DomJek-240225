@@ -17,7 +17,7 @@ export default class ExamplePlugin extends Plugin {
     }
 
     observeShippingSelection() {
-        const NAME = 'shippingMethodId';
+        const NAME = 'shippingMethod';
         const checkAndBind = () => {
             const inputs = Array.from(document.querySelectorAll(`input[name="${NAME}"]`));
             if (!inputs.length) return false;
@@ -66,6 +66,9 @@ export default class ExamplePlugin extends Plugin {
 
         if (!timeslotContainer) return;
 
+        // Check if this is Click & Collect by value or label
+        const isClickCollectByValue = input.value === 'click-collect';
+        
         // Determine label text for this input
         let labelText = '';
         try {
@@ -83,7 +86,8 @@ export default class ExamplePlugin extends Plugin {
         }
 
         const normalized = (labelText || '').trim().toLowerCase();
-        const match = /abholung im store|abholung|click.*collect|click and collect/i.test(normalized);
+        const matchByLabel = /abholung im store|abholung|click.*collect|click and collect/i.test(normalized);
+        const match = isClickCollectByValue || matchByLabel;
 
         // Get all standard shipping methods (excluding click & collect)
         const standardShippingMethods = document.querySelectorAll('.shipping-method');
@@ -117,6 +121,7 @@ export default class ExamplePlugin extends Plugin {
                 const selected = this.container?.querySelector('input[name="sw_timeslot"]:checked');
                 if (selected) {
                     window.localStorage.setItem('sw_click_collect_timeslot', selected.value);
+                    this.setCookie('sw_click_collect_timeslot', selected.value, 1);
                     document.dispatchEvent(new CustomEvent('sw.clickCollect.timeslotSelected', { 
                         detail: { timeslot: selected.value } 
                     }));
@@ -128,6 +133,7 @@ export default class ExamplePlugin extends Plugin {
         this.container?.addEventListener('change', (e) => {
             if (e.target.name === 'sw_timeslot' && e.target.checked) {
                 window.localStorage.setItem('sw_click_collect_timeslot', e.target.value);
+                this.setCookie('sw_click_collect_timeslot', e.target.value, 1);
             }
         });
     }
@@ -149,6 +155,13 @@ export default class ExamplePlugin extends Plugin {
                         this.showError('Kein Zeitfenster ausgewählt');
                         return false;
                     }
+                    
+                    // Add hidden inputs to the form for the backend
+                    this.addHiddenInputToForm(checkoutForm, 'sw_timeslot', selectedTimeslot.value);
+                    this.addHiddenInputToForm(checkoutForm, 'sw_click_collect_is_pickup', '1');
+                    
+                    // Also save to cookie for the subscriber
+                    this.setCookie('sw_click_collect_timeslot', selectedTimeslot.value, 1);
                 }
             });
         }
@@ -169,6 +182,18 @@ export default class ExamplePlugin extends Plugin {
                         this.showError('Kein Zeitfenster ausgewählt');
                         return false;
                     }
+                    
+                    // Find the form and add hidden inputs
+                    const form = document.querySelector('form[name="confirmOrderForm"]') || 
+                                document.querySelector('#confirmOrderForm') ||
+                                document.querySelector('form[action*="checkout/confirm"]');
+                    if (form) {
+                        this.addHiddenInputToForm(form, 'sw_timeslot', selectedTimeslot.value);
+                        this.addHiddenInputToForm(form, 'sw_click_collect_is_pickup', '1');
+                    }
+                    
+                    // Also save to cookie for the subscriber
+                    this.setCookie('sw_click_collect_timeslot', selectedTimeslot.value, 1);
                 }
             });
         }
@@ -201,6 +226,42 @@ export default class ExamplePlugin extends Plugin {
                 errorDiv.remove();
             }
         }, 5000);
+    }
+
+    setCookie(name, value, days) {
+        let expires = '';
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = '; expires=' + date.toUTCString();
+        }
+        document.cookie = name + '=' + (value || '') + expires + '; path=/';
+    }
+
+    getCookie(name) {
+        const nameEQ = name + '=';
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+    addHiddenInputToForm(form, name, value) {
+        // Remove existing hidden input with same name
+        const existingInput = form.querySelector(`input[type="hidden"][name="${name}"]`);
+        if (existingInput) {
+            existingInput.remove();
+        }
+        
+        // Create new hidden input
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = name;
+        hiddenInput.value = value;
+        form.appendChild(hiddenInput);
     }
 
     destroy() {

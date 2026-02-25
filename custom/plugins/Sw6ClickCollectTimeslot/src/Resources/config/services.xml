@@ -15,6 +15,8 @@
         </service>
 
         <service id="Sw6ClickCollectTimeslot\Subscriber\MySubscriber">
+            <argument type="service" id="request_stack"/>
+            <argument type="service" id="order.repository"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

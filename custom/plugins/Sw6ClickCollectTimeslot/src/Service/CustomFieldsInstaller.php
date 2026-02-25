@@ -17,22 +17,34 @@ class CustomFieldsInstaller
         'name' => self::CUSTOM_FIELDSET_NAME,
         'config' => [
             'label' => [
-                'en-GB' => 'English custom field set label',
-                'de-DE' => 'German custom field set label',
-                Defaults::LANGUAGE_SYSTEM => 'Mention the fallback label here'
+                'en-GB' => 'Click & Collect Timeslot',
+                'de-DE' => 'Click & Collect Zeitfenster',
+                Defaults::LANGUAGE_SYSTEM => 'Click & Collect Timeslot'
             ]
         ],
         'customFields' => [
             [
-                'name' => 'sw6_clickcollect_timeslot_size',
-                'type' => CustomFieldTypes::INT,
+                'name' => 'sw6_clickcollect_timeslot',
+                'type' => CustomFieldTypes::TEXT,
                 'config' => [
                     'label' => [
-                        'en-GB' => 'English custom field label',
-                        'de-DE' => 'German custom field label',
-                        Defaults::LANGUAGE_SYSTEM => 'Mention the fallback label here'
+                        'en-GB' => 'Timeslot',
+                        'de-DE' => 'Zeitfenster',
+                        Defaults::LANGUAGE_SYSTEM => 'Timeslot'
                     ],
                     'customFieldPosition' => 1
+                ]
+            ],
+            [
+                'name' => 'sw6_clickcollect_is_pickup',
+                'type' => CustomFieldTypes::BOOL,
+                'config' => [
+                    'label' => [
+                        'en-GB' => 'Is Store Pickup',
+                        'de-DE' => 'Ist Abholung im Store',
+                        Defaults::LANGUAGE_SYSTEM => 'Is Store Pickup'
+                    ],
+                    'customFieldPosition' => 2
                 ]
             ]
         ]
@@ -56,7 +68,7 @@ class CustomFieldsInstaller
         $this->customFieldSetRelationRepository->upsert(array_map(function (string $customFieldSetId) {
             return [
                 'customFieldSetId' => $customFieldSetId,
-                'entityName' => 'product',
+                'entityName' => 'order',
             ];
         }, $this->getCustomFieldSetIds($context)), $context);
     }
