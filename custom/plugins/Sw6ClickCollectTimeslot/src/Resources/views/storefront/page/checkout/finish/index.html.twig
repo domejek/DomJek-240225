@@ -87,8 +87,8 @@
                                     {% if page.order.customFields.sw6_clickcollect_is_pickup %}
                                         <p>
                                             <strong>{{ 'checkout.finishInfoShipping'|trans|sw_sanitize }}</strong>
-                                            Abholung im Store<br>
-                                            <small class="text-muted">Zeitfenster: {{ page.order.customFields.sw6_clickcollect_timeslot }}</small>
+                                            {{ page.order.customFields.sw6_clickcollect_shipping_method_name|default('Abholung im Store') }}<br>
+                                            <small class="text-muted">{{ page.order.customFields.sw6_clickcollect_timeslot }}</small>
                                         </p>
                                     {% elseif feature('v6.8.0.0') %}
                                         {% if page.order.primaryOrderDelivery is defined %}

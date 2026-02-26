@@ -3,7 +3,7 @@
 {% block page_account_order_item_detail_shipping_method_value %}
     {% if order.customFields.sw6_clickcollect_is_pickup %}
         <dd class="col-6 col-md-7 order-item-detail-labels-value">
-            Abholung im Store
+            {{ order.customFields.sw6_clickcollect_shipping_method_name|default('Abholung im Store') }}
             {% if order.customFields.sw6_clickcollect_timeslot %}
                 <br><small class="text-muted">{{ order.customFields.sw6_clickcollect_timeslot }}</small>
             {% endif %}

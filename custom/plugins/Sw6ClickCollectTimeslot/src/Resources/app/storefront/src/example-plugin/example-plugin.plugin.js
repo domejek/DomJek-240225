@@ -118,13 +118,16 @@ export default class ExamplePlugin extends Plugin {
         if (form) {
             const originalSubmit = form.onsubmit;
             form.addEventListener('submit', (e) => {
-                const selected = this.container?.querySelector('input[name="sw_timeslot"]:checked');
-                if (selected) {
-                    window.localStorage.setItem('sw_click_collect_timeslot', selected.value);
-                    this.setCookie('sw_click_collect_timeslot', selected.value, 1);
-                    document.dispatchEvent(new CustomEvent('sw.clickCollect.timeslotSelected', { 
-                        detail: { timeslot: selected.value } 
-                    }));
+                if (this.isClickCollectSelected) {
+                    const selected = this.container?.querySelector('input[name="sw_timeslot"]:checked');
+                    if (selected) {
+                        window.localStorage.setItem('sw_click_collect_timeslot', selected.value);
+                        this.setCookie('sw_click_collect_timeslot', selected.value, 1);
+                        this.setCookie('sw_click_collect_is_pickup', '1', 1);
+                        document.dispatchEvent(new CustomEvent('sw.clickCollect.timeslotSelected', { 
+                            detail: { timeslot: selected.value } 
+                        }));
+                    }
                 }
             });
         }
@@ -134,11 +137,14 @@ export default class ExamplePlugin extends Plugin {
             if (e.target.name === 'sw_timeslot' && e.target.checked) {
                 window.localStorage.setItem('sw_click_collect_timeslot', e.target.value);
                 this.setCookie('sw_click_collect_timeslot', e.target.value, 1);
+                this.setCookie('sw_click_collect_is_pickup', '1', 1);
             }
         });
     }
 
     handleCheckoutValidation() {
+        const errorMessage = window.accessibilityText?.clickCollectTimeslot?.error || 'Bitte wählen Sie ein Zeitfenster aus';
+        
         // Find the checkout form (confirm order form)
         const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
                             document.querySelector('#confirmOrderForm') ||
@@ -152,7 +158,7 @@ export default class ExamplePlugin extends Plugin {
                     if (!selectedTimeslot) {
                         e.preventDefault();
                         e.stopPropagation();
-                        this.showError('Kein Zeitfenster ausgewählt');
+                        this.showError(errorMessage);
                         return false;
                     }
                     
@@ -179,7 +185,7 @@ export default class ExamplePlugin extends Plugin {
                     if (!selectedTimeslot) {
                         e.preventDefault();
                         e.stopPropagation();
-                        this.showError('Kein Zeitfenster ausgewählt');
+                        this.showError(errorMessage);
                         return false;
                     }
                     

@@ -1,15 +1,8 @@
 {
-  "swag-example": {
-    "general": {
-      "sw-click-collect-timeslot": {
-        "varianteB": "Abholung im Store",
-        "timeslot": "Zeitfenster",
-        "timeslot1": "09:00 - 11:00 Uhr",
-        "timeslot2": "11:00 - 13:00 Uhr",
-        "timeslot3": "13:00 - 15:00 Uhr",
-        "selectTimeslot": "Wählen Sie ein Zeitfenster aus",
-        "noTimeslots": "Keine Zeitfenster verfügbar"
-      }
-    }
+  "clickCollectTimeslot": {
+    "header": "Abholung im Store",
+    "selectTimeslot": "Zeitfenster auswählen",
+    "noTimeslots": "Keine Zeitfenster verfügbar",
+    "error": "Bitte wählen Sie ein Zeitfenster aus"
   }
 }

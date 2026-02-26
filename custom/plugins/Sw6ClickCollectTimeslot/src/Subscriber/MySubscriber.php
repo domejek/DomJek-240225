@@ -4,20 +4,16 @@ namespace Sw6ClickCollectTimeslot\Subscriber;
 
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Sw6ClickCollectTimeslot\Service\TimeslotService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 class MySubscriber implements EventSubscriberInterface
 {
-    private const TIMESLOT_LABELS = [
-        'timeslot1' => '09:00 - 11:00 Uhr',
-        'timeslot2' => '11:00 - 13:00 Uhr',
-        'timeslot3' => '13:00 - 15:00 Uhr',
-    ];
-
     public function __construct(
         private readonly RequestStack $requestStack,
-        private readonly EntityRepository $orderRepository
+        private readonly EntityRepository $orderRepository,
+        private readonly TimeslotService $timeslotService
     ) {
     }
 
@@ -36,10 +32,19 @@ class MySubscriber implements EventSubscriberInterface
             return;
         }
 
-        $isClickCollect = $request->request->get('sw_click_collect_is_pickup', false);
-        $timeslotValue = $request->request->get('sw_timeslot') ?? $request->cookies->get('sw_click_collect_timeslot');
+        $isClickCollect = $request->request->getBoolean('sw_click_collect_is_pickup', false);
+        
+        if (!$isClickCollect) {
+            $isClickCollect = $request->cookies->has('sw_click_collect_is_pickup');
+        }
+        
+        if (!$isClickCollect) {
+            return;
+        }
 
-        if (!$isClickCollect && !$timeslotValue) {
+        $timeslotValue = $request->request->get('sw_timeslot');
+
+        if (!$timeslotValue) {
             $timeslotValue = $request->cookies->get('sw_click_collect_timeslot');
         }
 
@@ -47,21 +52,18 @@ class MySubscriber implements EventSubscriberInterface
             return;
         }
 
-        $timeslotLabels = [];
-        $timeslotValues = explode(',', $timeslotValue);
-        foreach ($timeslotValues as $value) {
-            $timeslotLabels[] = self::TIMESLOT_LABELS[trim($value)] ?? trim($value);
-        }
-        $timeslotLabel = implode(', ', $timeslotLabels);
-
+        $salesChannelId = $event->getSalesChannelContext()->getSalesChannelId();
+        $shippingMethodName = $this->timeslotService->getShippingMethodName($salesChannelId);
+        
         $order = $event->getOrder();
         
         $this->orderRepository->update([
             [
                 'id' => $order->getId(),
                 'customFields' => [
-                    'sw6_clickcollect_timeslot' => $timeslotLabel,
+                    'sw6_clickcollect_timeslot' => $timeslotValue,
                     'sw6_clickcollect_is_pickup' => true,
+                    'sw6_clickcollect_shipping_method_name' => $shippingMethodName,
                 ],
             ],
         ], $event->getContext());

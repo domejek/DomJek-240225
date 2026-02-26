@@ -4,12 +4,28 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
-        <title>Minimal configuration</title>
+        <title lang="de-DE">Zeitfenster</title>
+        <title lang="en-GB">Time slots</title>
+
+        <input-field type="textarea">
+            <name>timeslots</name>
+            <label lang="de-DE">Abholzeitfenster</label>
+            <label lang="en-GB">Pickup time slots</label>
+            <helpText lang="de-DE">Zeitfenster kommasepariert eingeben (z.B. 09:00-11:00, 11:00-13:00, 13:00-15:00)</helpText>
+            <helpText lang="en-GB">Enter time slots separated by comma (e.g. 09:00-11:00, 11:00-13:00, 13:00-15:00)</helpText>
+            <defaultValue>09:00-11:00, 11:00-13:00, 13:00-15:00</defaultValue>
+        </input-field>
+    </card>
+
+    <card>
+        <title lang="de-DE">Versandart</title>
+        <title lang="en-GB">Shipping method</title>
 
         <input-field type="text">
-            <name>textField</name>
-            <label>Test field with default value</label>
-            <defaultValue>test</defaultValue>
+            <name>shippingMethodName</name>
+            <label lang="de-DE">Name der Versandart</label>
+            <label lang="en-GB">Shipping method name</label>
+            <defaultValue>Abholung im Store</defaultValue>
         </input-field>
     </card>
 

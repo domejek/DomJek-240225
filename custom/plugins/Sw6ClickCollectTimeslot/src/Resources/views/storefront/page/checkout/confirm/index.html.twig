@@ -3,28 +3,28 @@
 {% block page_checkout_confirm_shipping %}
     {{ parent() }}
     
+    {% set timeslots = page.clickCollectTimeslots|default(['09:00-11:00', '11:00-13:00', '13:00-15:00']) %}
+    {% set shippingMethodName = page.clickCollectShippingMethodName|default('Abholung im Store') %}
+    
     <div class="click-collect-timeslot" data-click-collect style="display:none; margin-top: 20px;">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Abholung im Store</h5>
+                <h5 class="card-title">{{ 'clickCollectTimeslot.header'|trans|sw_sanitize }}</h5>
                 
-                <div class="timeslot-options">
-                    <label class="form-check">
-                        <input type="radio" name="sw_timeslot" value="timeslot1" class="form-check-input">
-                        <span class="form-check-label">09:00 - 11:00 Uhr</span>
-                    </label>
-                    <label class="form-check">
-                        <input type="radio" name="sw_timeslot" value="timeslot2" class="form-check-input">
-                        <span class="form-check-label">11:00 - 13:00 Uhr</span>
-                    </label>
-                    <label class="form-check">
-                        <input type="radio" name="sw_timeslot" value="timeslot3" class="form-check-input">
-                        <span class="form-check-label">13:00 - 15:00 Uhr</span>
-                    </label>
-                </div>
+                {% if timeslots|length > 0 %}
+                    <div class="timeslot-options">
+                        {% for timeslot in timeslots %}
+                            <label class="form-check">
+                                <input type="radio" name="sw_timeslot" value="{{ timeslot }}" class="form-check-input">
+                                <span class="form-check-label">{{ timeslot }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">{{ 'clickCollectTimeslot.noTimeslots'|trans|sw_sanitize }}</p>
+                {% endif %}
             </div>
         </div>
         <div class="click-collect-notice" data-click-collect-notice></div>
     </div>
 {% endblock %}
-

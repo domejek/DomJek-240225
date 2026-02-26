@@ -16,15 +16,15 @@
             
             <div class="timeslot-options">
                 <div class="form-check">
-                    <input type="checkbox" name="sw_timeslot[]" value="timeslot1" class="form-check-input timeslot-checkbox" id="timeslot1">
+                    <input type="radio" name="sw_timeslot" value="09:00-11:00" class="form-check-input timeslot-radio" id="timeslot1">
                     <label class="form-check-label" for="timeslot1">09:00 - 11:00 Uhr</label>
                 </div>
                 <div class="form-check">
-                    <input type="checkbox" name="sw_timeslot[]" value="timeslot2" class="form-check-input timeslot-checkbox" id="timeslot2">
+                    <input type="radio" name="sw_timeslot" value="11:00-13:00" class="form-check-input timeslot-radio" id="timeslot2">
                     <label class="form-check-label" for="timeslot2">11:00 - 13:00 Uhr</label>
                 </div>
                 <div class="form-check">
-                    <input type="checkbox" name="sw_timeslot[]" value="timeslot3" class="form-check-input timeslot-checkbox" id="timeslot3">
+                    <input type="radio" name="sw_timeslot" value="13:00-15:00" class="form-check-input timeslot-radio" id="timeslot3">
                     <label class="form-check-label" for="timeslot3">13:00 - 15:00 Uhr</label>
                 </div>
             </div>
@@ -36,7 +36,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const shippingSelect = document.getElementById('shippingMethodSelect');
             const timeslotContainer = document.querySelector('[data-click-collect]');
-            const timeslotCheckboxes = document.querySelectorAll('.timeslot-checkbox');
+            const timeslotRadios = document.querySelectorAll('.timeslot-radio');
 
             function hideTimeslots() {
                 if (timeslotContainer) {
@@ -79,25 +79,23 @@
                         showTimeslots();
                     } else {
                         hideTimeslots();
-                        timeslotCheckboxes.forEach(cb => cb.checked = false);
+                        timeslotRadios.forEach(rb => rb.checked = false);
                     }
                 });
             }
 
-            // Validate checkout when button is clicked
             function validateCheckout(e) {
                 if (shippingSelect && shippingSelect.value === 'click-collect') {
-                    const selectedCheckboxes = timeslotContainer ? timeslotContainer.querySelectorAll('input[name="sw_timeslot[]"]:checked') : [];
-                    if (selectedCheckboxes.length === 0) {
+                    const selectedRadio = timeslotContainer ? timeslotContainer.querySelector('input[name="sw_timeslot"]:checked') : null;
+                    if (!selectedRadio) {
                         e.preventDefault();
                         e.stopPropagation();
-                        showError('Bitte wählen Sie mindestens ein Zeitfenster aus');
+                        showError('Bitte wählen Sie ein Zeitfenster aus');
                         return false;
                     }
                 }
             }
 
-            // Find and bind to checkout form
             const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
                                 document.querySelector('#confirmOrderForm') ||
                                 document.querySelector('form[action*="checkout/confirm"]');
@@ -105,19 +103,17 @@
             if (checkoutForm) {
                 checkoutForm.addEventListener('submit', function(e) {
                     if (shippingSelect && shippingSelect.value === 'click-collect') {
-                        const selectedCheckboxes = timeslotContainer ? timeslotContainer.querySelectorAll('input[name="sw_timeslot[]"]:checked') : [];
-                        if (selectedCheckboxes.length > 0) {
-                            // Add hidden input with selected timeslots
+                        const selectedRadio = timeslotContainer ? timeslotContainer.querySelector('input[name="sw_timeslot"]:checked') : null;
+                        if (selectedRadio) {
                             const existingHidden = checkoutForm.querySelector('input[type="hidden"][name="sw_timeslot"]');
                             if (existingHidden) existingHidden.remove();
 
                             const hiddenInput = document.createElement('input');
                             hiddenInput.type = 'hidden';
                             hiddenInput.name = 'sw_timeslot';
-                            hiddenInput.value = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+                            hiddenInput.value = selectedRadio.value;
                             checkoutForm.appendChild(hiddenInput);
 
-                            // Add hidden input for click collect flag
                             const existingFlag = checkoutForm.querySelector('input[type="hidden"][name="sw_click_collect_is_pickup"]');
                             if (existingFlag) existingFlag.remove();
 
@@ -132,7 +128,6 @@
                 });
             }
 
-            // Also bind to confirm button
             const confirmButton = document.querySelector('.btn.checkout-confirm-submit') ||
                                  document.querySelector('button[type="submit"][form="confirmOrderForm"]') ||
                                  document.querySelector('.checkout-confirm-form-submit');

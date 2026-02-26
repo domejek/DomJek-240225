@@ -46,6 +46,18 @@ class CustomFieldsInstaller
                     ],
                     'customFieldPosition' => 2
                 ]
+            ],
+            [
+                'name' => 'sw6_clickcollect_shipping_method_name',
+                'type' => CustomFieldTypes::TEXT,
+                'config' => [
+                    'label' => [
+                        'en-GB' => 'Shipping Method Name',
+                        'de-DE' => 'Versandartenname',
+                        Defaults::LANGUAGE_SYSTEM => 'Shipping Method Name'
+                    ],
+                    'customFieldPosition' => 3
+                ]
             ]
         ]
     ];
