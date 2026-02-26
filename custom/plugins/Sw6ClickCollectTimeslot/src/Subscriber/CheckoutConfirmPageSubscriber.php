@@ -2,11 +2,8 @@
 
 namespace Sw6ClickCollectTimeslot\Subscriber;
 
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\FrameworkException;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
+use Shopware\Storefront\Page\PageLoadedEvent;
 use Sw6ClickCollectTimeslot\Service\TimeslotService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -21,11 +18,11 @@ class CheckoutConfirmPageSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmPageLoaded',
+            'Shopware_SalesChannel_Page_Loaded' => 'onPageLoaded',
         ];
     }
 
-    public function onCheckoutConfirmPageLoaded(CheckoutConfirmPageLoadedEvent $event): void
+    public function onPageLoaded(PageLoadedEvent $event): void
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $salesChannelId = $salesChannelContext->getSalesChannelId();

@@ -6,10 +6,10 @@
     {% set timeslots = page.clickCollectTimeslots|default(['09:00-11:00', '11:00-13:00', '13:00-15:00']) %}
     {% set shippingMethodName = page.clickCollectShippingMethodName|default('Abholung im Store') %}
     
-    <div class="click-collect-timeslot" data-click-collect style="display:none; margin-top: 20px;">
+    <div class="click-collect-timeslot" data-click-collect data-timeslots="{{ timeslots|json_encode|escape('html_attr') }}" style="display:none; margin-top: 20px;">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">{{ 'clickCollectTimeslot.header'|trans|sw_sanitize }}</h5>
+                <h5 class="card-title">Zeitfenster auswählen</h5>
                 
                 {% if timeslots|length > 0 %}
                     <div class="timeslot-options">
@@ -21,10 +21,213 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-muted">{{ 'clickCollectTimeslot.noTimeslots'|trans|sw_sanitize }}</p>
+                    <p class="text-muted">Keine Zeitfenster verfügbar</p>
                 {% endif %}
             </div>
         </div>
         <div class="click-collect-notice" data-click-collect-notice></div>
     </div>
+
+    <script>
+        (function() {
+            function setCookie(name, value, days) {
+                let expires = '';
+                if (days) {
+                    const date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    expires = '; expires=' + date.toUTCString();
+                }
+                document.cookie = name + '=' + (value || '') + expires + '; path=/; SameSite=Lax';
+            }
+
+            function getCookie(name) {
+                const nameEQ = name + '=';
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+                }
+                return null;
+            }
+
+            function getLocale() {
+                const htmlLang = document.documentElement.lang || '';
+                if (htmlLang.startsWith('en')) return 'en-GB';
+                return 'de-DE';
+            }
+
+            function getErrorMessage() {
+                const locale = getLocale();
+                if (locale === 'en-GB') {
+                    return 'Please select a time slot';
+                }
+                return 'Bitte wählen Sie ein Zeitfenster aus';
+            }
+
+            function showError(message) {
+                const existingError = document.querySelector('.click-collect-error');
+                if (existingError) existingError.remove();
+
+                const container = document.querySelector('[data-click-collect]');
+                if (!container) return;
+
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger click-collect-error';
+                errorDiv.style.marginTop = '10px';
+                errorDiv.innerHTML = '<div class="alert-content">' + message + '</div>';
+                container.appendChild(errorDiv);
+                errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                setTimeout(function() {
+                    if (errorDiv.parentNode) errorDiv.remove();
+                }, 5000);
+            }
+
+            function checkShippingMethod() {
+                const shippingInputs = document.querySelectorAll('input[name="shippingMethod"]');
+                let isClickCollect = false;
+                
+                shippingInputs.forEach(function(input) {
+                    if (input.checked) {
+                        const label = document.querySelector('label[for="' + input.id + '"]');
+                        const labelText = label ? label.textContent.toLowerCase() : '';
+                        if (labelText.includes('abholung') || labelText.includes('click') || labelText.includes('collect') || labelText.includes('store pickup')) {
+                            isClickCollect = true;
+                        }
+                    }
+                });
+
+                const selectDropdown = document.querySelector('.shipping-method-dropdown');
+                if (selectDropdown && selectDropdown.value === 'click-collect') {
+                    isClickCollect = true;
+                }
+
+                const container = document.querySelector('[data-click-collect]');
+                if (container) {
+                    if (isClickCollect) {
+                        container.style.display = 'block';
+                        setCookie('sw_click_collect_is_pickup', '1', 1);
+                    } else {
+                        container.style.display = 'none';
+                        setCookie('sw_click_collect_is_pickup', '', -1);
+                        setCookie('sw_click_collect_timeslot', '', -1);
+                    }
+                }
+            }
+
+            function validateCheckout(e) {
+                const container = document.querySelector('[data-click-collect]');
+                const shippingInputs = document.querySelectorAll('input[name="shippingMethod"]');
+                let isClickCollect = false;
+                
+                shippingInputs.forEach(function(input) {
+                    if (input.checked) {
+                        const label = document.querySelector('label[for="' + input.id + '"]');
+                        const labelText = label ? label.textContent.toLowerCase() : '';
+                        if (labelText.includes('abholung') || labelText.includes('click') || labelText.includes('collect') || labelText.includes('store pickup')) {
+                            isClickCollect = true;
+                        }
+                    }
+                });
+
+                const selectDropdown = document.querySelector('.shipping-method-dropdown');
+                if (selectDropdown && selectDropdown.value === 'click-collect') {
+                    isClickCollect = true;
+                }
+
+                if (isClickCollect && container) {
+                    const selectedRadio = container.querySelector('input[name="sw_timeslot"]:checked');
+                    if (!selectedRadio) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showError(getErrorMessage());
+                        return false;
+                    }
+                    
+                    setCookie('sw_click_collect_timeslot', selectedRadio.value, 1);
+                    setCookie('sw_click_collect_is_pickup', '1', 1);
+                    
+                    // Add hidden inputs to form
+                    const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
+                                        document.querySelector('#confirmOrderForm') ||
+                                        document.querySelector('form[action*="checkout/confirm"]');
+                    if (checkoutForm) {
+                        let hiddenInput = checkoutForm.querySelector('input[type="hidden"][name="sw_timeslot"]');
+                        if (hiddenInput) hiddenInput.remove();
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'sw_timeslot';
+                        hiddenInput.value = selectedRadio.value;
+                        checkoutForm.appendChild(hiddenInput);
+
+                        let flagInput = checkoutForm.querySelector('input[type="hidden"][name="sw_click_collect_is_pickup"]');
+                        if (flagInput) flagInput.remove();
+                        flagInput = document.createElement('input');
+                        flagInput.type = 'hidden';
+                        flagInput.name = 'sw_click_collect_is_pickup';
+                        flagInput.value = '1';
+                        checkoutForm.appendChild(flagInput);
+                    }
+                }
+                return true;
+            }
+
+            function init() {
+                checkShippingMethod();
+
+                // Listen for shipping method changes
+                document.querySelectorAll('input[name="shippingMethod"]').forEach(function(input) {
+                    input.addEventListener('change', checkShippingMethod);
+                });
+
+                const selectDropdown = document.querySelector('.shipping-method-dropdown');
+                if (selectDropdown) {
+                    selectDropdown.addEventListener('change', checkShippingMethod);
+                }
+
+                // Listen for timeslot changes
+                const container = document.querySelector('[data-click-collect]');
+                if (container) {
+                    container.querySelectorAll('input[name="sw_timeslot"]').forEach(function(radio) {
+                        radio.addEventListener('change', function() {
+                            if (this.checked) {
+                                setCookie('sw_click_collect_timeslot', this.value, 1);
+                                setCookie('sw_click_collect_is_pickup', '1', 1);
+                            }
+                        });
+                    });
+                }
+
+                // Form submission
+                const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
+                                    document.querySelector('#confirmOrderForm') ||
+                                    document.querySelector('form[action*="checkout/confirm"]');
+                
+                if (checkoutForm) {
+                    checkoutForm.addEventListener('submit', validateCheckout);
+                }
+
+                // Confirm button
+                const confirmButton = document.querySelector('.btn.checkout-confirm-submit') ||
+                                     document.querySelector('button[type="submit"][form="confirmOrderForm"]') ||
+                                     document.querySelector('.checkout-confirm-form-submit');
+                
+                if (confirmButton) {
+                    confirmButton.addEventListener('click', function(e) {
+                        if (!validateCheckout(e)) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    });
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
 {% endblock %}

@@ -1,140 +1,240 @@
 {% sw_extends '@Storefront/storefront/component/shipping/shipping-form.html.twig' %}
 
 {% block component_shipping_form %}
+    {% set timeslots = page.clickCollectTimeslots|default(['09:00-11:00', '11:00-13:00', '13:00-15:00']) %}
+    {% set shippingMethodName = page.clickCollectShippingMethodName|default('Abholung im Store') %}
+    
     <div class="shipping-method-form" data-form-auto-submit="true">
         <div class="shipping-method-select">
             <label for="shippingMethodSelect" class="form-label">Versandart</label>
             <select id="shippingMethodSelect" name="shippingMethodSelect" class="form-select shipping-method-dropdown">
                 <option value="standard">Standard</option>
-                <option value="click-collect">Abholung im Store</option>
+                <option value="click-collect" data-is-click-collect="true">{{ shippingMethodName }}</option>
             </select>
         </div>
 
         {# Timeslots - only visible when Click & Collect is selected #}
-        <div class="shipping-method-timeslots click-collect-timeslot" data-click-collect style="margin-top: 20px; display: none;">
-            <h5 class="mb-3">Zeitfenster wählen</h5>
+        <div class="shipping-method-timeslots click-collect-timeslot" 
+             data-click-collect 
+             data-timeslots="{{ timeslots|json_encode|escape('html_attr') }}"
+             style="margin-top: 20px; display: none;">
+            <h5 class="mb-3">Zeitfenster auswählen</h5>
             
             <div class="timeslot-options">
-                <div class="form-check">
-                    <input type="radio" name="sw_timeslot" value="09:00-11:00" class="form-check-input timeslot-radio" id="timeslot1">
-                    <label class="form-check-label" for="timeslot1">09:00 - 11:00 Uhr</label>
-                </div>
-                <div class="form-check">
-                    <input type="radio" name="sw_timeslot" value="11:00-13:00" class="form-check-input timeslot-radio" id="timeslot2">
-                    <label class="form-check-label" for="timeslot2">11:00 - 13:00 Uhr</label>
-                </div>
-                <div class="form-check">
-                    <input type="radio" name="sw_timeslot" value="13:00-15:00" class="form-check-input timeslot-radio" id="timeslot3">
-                    <label class="form-check-label" for="timeslot3">13:00 - 15:00 Uhr</label>
-                </div>
+                {% for timeslot in timeslots %}
+                    <div class="form-check">
+                        <input type="radio" name="sw_timeslot" value="{{ timeslot }}" class="form-check-input timeslot-radio" id="timeslot{{ loop.index }}">
+                        <label class="form-check-label" for="timeslot{{ loop.index }}">{{ timeslot }}</label>
+                    </div>
+                {% endfor %}
             </div>
             <div class="click-collect-notice" data-click-collect-notice></div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const shippingSelect = document.getElementById('shippingMethodSelect');
-            const timeslotContainer = document.querySelector('[data-click-collect]');
-            const timeslotRadios = document.querySelectorAll('.timeslot-radio');
+        (function() {
+            function setCookie(name, value, days) {
+                let expires = '';
+                if (days) {
+                    const date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    expires = '; expires=' + date.toUTCString();
+                }
+                document.cookie = name + '=' + (value || '') + expires + '; path=/; SameSite=Lax';
+            }
+
+            function getCookie(name) {
+                const nameEQ = name + '=';
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+                }
+                return null;
+            }
+
+            function getLocale() {
+                const htmlLang = document.documentElement.lang || '';
+                if (htmlLang.startsWith('en')) return 'en-GB';
+                return 'de-DE';
+            }
 
             function hideTimeslots() {
-                if (timeslotContainer) {
-                    timeslotContainer.style.display = 'none';
-                }
+                const container = document.querySelector('[data-click-collect]');
+                if (container) container.style.display = 'none';
             }
 
             function showTimeslots() {
-                if (timeslotContainer) {
-                    timeslotContainer.style.display = 'block';
+                const container = document.querySelector('[data-click-collect]');
+                if (container) container.style.display = 'block';
+            }
+
+            function getErrorMessage() {
+                const locale = getLocale();
+                if (locale === 'en-GB') {
+                    return 'Please select a time slot';
                 }
+                return 'Bitte wählen Sie ein Zeitfenster aus';
             }
 
             function showError(message) {
                 const existingError = document.querySelector('.click-collect-error');
-                if (existingError) {
-                    existingError.remove();
-                }
+                if (existingError) existingError.remove();
+
+                const container = document.querySelector('[data-click-collect]');
+                if (!container) return;
 
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'alert alert-danger click-collect-error';
                 errorDiv.style.marginTop = '10px';
                 errorDiv.innerHTML = '<div class="alert-content">' + message + '</div>';
-
-                if (timeslotContainer) {
-                    timeslotContainer.appendChild(errorDiv);
-                    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                container.appendChild(errorDiv);
+                errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                 setTimeout(function() {
-                    if (errorDiv.parentNode) {
-                        errorDiv.remove();
-                    }
+                    if (errorDiv.parentNode) errorDiv.remove();
                 }, 5000);
             }
 
-            if (shippingSelect) {
-                shippingSelect.addEventListener('change', function() {
-                    if (this.value === 'click-collect') {
-                        showTimeslots();
-                    } else {
-                        hideTimeslots();
-                        timeslotRadios.forEach(rb => rb.checked = false);
+            function saveTimeslotToForm() {
+                const shippingSelect = document.getElementById('shippingMethodSelect');
+                const timeslotContainer = document.querySelector('[data-click-collect]');
+                
+                if (!shippingSelect || !timeslotContainer) return;
+
+                if (shippingSelect.value === 'click-collect') {
+                    const selectedRadio = timeslotContainer.querySelector('input[name="sw_timeslot"]:checked');
+                    
+                    setCookie('sw_click_collect_is_pickup', '1', 1);
+                    
+                    if (selectedRadio) {
+                        setCookie('sw_click_collect_timeslot', selectedRadio.value, 1);
                     }
-                });
+                } else {
+                    setCookie('sw_click_collect_is_pickup', '', -1);
+                    setCookie('sw_click_collect_timeslot', '', -1);
+                }
             }
 
             function validateCheckout(e) {
+                const shippingSelect = document.getElementById('shippingMethodSelect');
+                const timeslotContainer = document.querySelector('[data-click-collect]');
+                
                 if (shippingSelect && shippingSelect.value === 'click-collect') {
                     const selectedRadio = timeslotContainer ? timeslotContainer.querySelector('input[name="sw_timeslot"]:checked') : null;
                     if (!selectedRadio) {
                         e.preventDefault();
                         e.stopPropagation();
-                        showError('Bitte wählen Sie ein Zeitfenster aus');
+                        showError(getErrorMessage());
                         return false;
                     }
+                    
+                    // Save to cookies before form submission
+                    setCookie('sw_click_collect_timeslot', selectedRadio.value, 1);
+                    setCookie('sw_click_collect_is_pickup', '1', 1);
+                    
+                    // Add hidden inputs
+                    const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
+                                        document.querySelector('#confirmOrderForm') ||
+                                        document.querySelector('form[action*="checkout/confirm"]');
+                    if (checkoutForm) {
+                        let hiddenInput = checkoutForm.querySelector('input[type="hidden"][name="sw_timeslot"]');
+                        if (hiddenInput) hiddenInput.remove();
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'sw_timeslot';
+                        hiddenInput.value = selectedRadio.value;
+                        checkoutForm.appendChild(hiddenInput);
+
+                        let flagInput = checkoutForm.querySelector('input[type="hidden"][name="sw_click_collect_is_pickup"]');
+                        if (flagInput) flagInput.remove();
+                        flagInput = document.createElement('input');
+                        flagInput.type = 'hidden';
+                        flagInput.name = 'sw_click_collect_is_pickup';
+                        flagInput.value = '1';
+                        checkoutForm.appendChild(flagInput);
+                    }
+                }
+                return true;
+            }
+
+            function init() {
+                const shippingSelect = document.getElementById('shippingMethodSelect');
+                const timeslotContainer = document.querySelector('[data-click-collect]');
+                
+                if (!shippingSelect || !timeslotContainer) {
+                    setTimeout(init, 100);
+                    return;
+                }
+
+                // Check initial state
+                if (shippingSelect.value === 'click-collect') {
+                    showTimeslots();
+                }
+
+                // Listen for changes
+                shippingSelect.addEventListener('change', function() {
+                    if (this.value === 'click-collect') {
+                        showTimeslots();
+                        setCookie('sw_click_collect_is_pickup', '1', 1);
+                    } else {
+                        hideTimeslots();
+                        setCookie('sw_click_collect_is_pickup', '', -1);
+                        setCookie('sw_click_collect_timeslot', '', -1);
+                        timeslotContainer.querySelectorAll('.timeslot-radio').forEach(function(rb) {
+                            rb.checked = false;
+                        });
+                    }
+                });
+
+                // Listen for radio button changes
+                timeslotContainer.querySelectorAll('.timeslot-radio').forEach(function(radio) {
+                    radio.addEventListener('change', function() {
+                        if (this.checked) {
+                            setCookie('sw_click_collect_timeslot', this.value, 1);
+                            setCookie('sw_click_collect_is_pickup', '1', 1);
+                        }
+                    });
+                });
+
+                // Form submission
+                const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
+                                    document.querySelector('#confirmOrderForm') ||
+                                    document.querySelector('form[action*="checkout/confirm"]');
+                
+                if (checkoutForm) {
+                    checkoutForm.addEventListener('submit', function(e) {
+                        if (!validateCheckout(e)) {
+                            return false;
+                        }
+                        saveTimeslotToForm();
+                    });
+                }
+
+                // Confirm button
+                const confirmButton = document.querySelector('.btn.checkout-confirm-submit') ||
+                                     document.querySelector('button[type="submit"][form="confirmOrderForm"]') ||
+                                     document.querySelector('.checkout-confirm-form-submit');
+                
+                if (confirmButton) {
+                    confirmButton.addEventListener('click', function(e) {
+                        if (!validateCheckout(e)) {
+                            e.preventDefault();
+                            return false;
+                        }
+                        saveTimeslotToForm();
+                    });
                 }
             }
 
-            const checkoutForm = document.querySelector('form[name="confirmOrderForm"]') || 
-                                document.querySelector('#confirmOrderForm') ||
-                                document.querySelector('form[action*="checkout/confirm"]');
-            
-            if (checkoutForm) {
-                checkoutForm.addEventListener('submit', function(e) {
-                    if (shippingSelect && shippingSelect.value === 'click-collect') {
-                        const selectedRadio = timeslotContainer ? timeslotContainer.querySelector('input[name="sw_timeslot"]:checked') : null;
-                        if (selectedRadio) {
-                            const existingHidden = checkoutForm.querySelector('input[type="hidden"][name="sw_timeslot"]');
-                            if (existingHidden) existingHidden.remove();
-
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'hidden';
-                            hiddenInput.name = 'sw_timeslot';
-                            hiddenInput.value = selectedRadio.value;
-                            checkoutForm.appendChild(hiddenInput);
-
-                            const existingFlag = checkoutForm.querySelector('input[type="hidden"][name="sw_click_collect_is_pickup"]');
-                            if (existingFlag) existingFlag.remove();
-
-                            const flagInput = document.createElement('input');
-                            flagInput.type = 'hidden';
-                            flagInput.name = 'sw_click_collect_is_pickup';
-                            flagInput.value = '1';
-                            checkoutForm.appendChild(flagInput);
-                        }
-                    }
-                    validateCheckout(e);
-                });
+            // Start
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
             }
-
-            const confirmButton = document.querySelector('.btn.checkout-confirm-submit') ||
-                                 document.querySelector('button[type="submit"][form="confirmOrderForm"]') ||
-                                 document.querySelector('.checkout-confirm-form-submit');
-            
-            if (confirmButton) {
-                confirmButton.addEventListener('click', validateCheckout);
-            }
-        });
+        })();
     </script>
 {% endblock %}
