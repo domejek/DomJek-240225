@@ -1,5 +1,28 @@
-/composer.lock
-/src/Resources/app/administration/node_modules/
-/src/Resources/app/administration/src/.vite
+# Dependencies
+/vendor/
+/node_modules/
+
+# Build artifacts
 /src/Resources/public/
-/vendor
+/src/Resources/app/administration/src/.vite/
+/src/Resources/app/storefront/src/js/
+
+# Lock files
+/composer.lock
+/package-lock.json
+/yarn.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Shopware specific
+/.cache/
+/var/
+/web/
